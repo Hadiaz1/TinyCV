@@ -1,2 +1,4 @@
 tinycv_venv
 .idea
+models/*
+images/*
