@@ -1,3 +1,5 @@
 opencv-python
 ultralytics
 onnxruntime
+pillow
+supervision
