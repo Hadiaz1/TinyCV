@@ -3,3 +3,4 @@ ultralytics
 onnxruntime
 pillow
 supervision
+imread_from_url

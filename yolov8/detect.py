@@ -111,19 +111,3 @@ class YOLOv8Detect:
     def draw_detections(self, image, draw_scores=True, mask_alpha=0.4):
         return draw_detections(image, self.boxes, self.scores,
                                self.class_ids, mask_alpha)
-
-if __name__ == "__main__":
-
-    model_path = "models/yolov8n.onnx"
-
-    yolov8_detector = YOLOv8Detect(model_path, conf_threshold=0.3, iou_threhold=0.3)
-
-    img = cv2.imread("images/traffic_intersection.jpg")
-
-    yolov8_detector(img)
-
-    # Draw detections
-    combined_img = yolov8_detector.draw_detections(img)
-    combined_img = Image.fromarray(combined_img)
-
-    combined_img.show()
