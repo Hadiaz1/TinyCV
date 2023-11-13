@@ -108,6 +108,6 @@ class YOLOv8Detect:
         boxes *= np.array([self.img_width, self.img_height, self.img_width, self.img_height])
         return boxes
 
-    def draw_detections(self, image, draw_scores=True, mask_alpha=0.4):
+    def draw_detections(self, image, draw_scores=True, mask_alpha=0.4, data="fm"):
         return draw_detections(image, self.boxes, self.scores,
-                               self.class_ids, mask_alpha)
+                               self.class_ids, mask_alpha, data="fm")

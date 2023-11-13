@@ -7,7 +7,7 @@ sys.path.append("/yolov8")
 
 from detect import YOLOv8Detect
 
-model_path = "models/yolov8n.onnx"
+model_path = "models/yolov8n_facemask.onnx"
 
 yolov8_detector = YOLOv8Detect(model_path, conf_threshold=0.3, iou_threhold=0.3)
 
@@ -19,8 +19,8 @@ img = imread_from_url(img_url)
 yolov8_detector(img)
 
 # Draw detections
-combined_img = yolov8_detector.draw_detections(img)
-cv2.imwrite("images/detected_objects.jpg", combined_img)
+combined_img = yolov8_detector.draw_detections(img, data="fm")
+cv2.imwrite("images/detected_objects_facemask.jpg", combined_img)
 combined_img = Image.fromarray(combined_img)
 
 combined_img.show()

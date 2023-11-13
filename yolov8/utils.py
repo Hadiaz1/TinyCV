@@ -11,9 +11,12 @@ class_names = ['person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'tra
                'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
 
+fm_class_names = ["face_mask", "human_face", "incorrect_face_mask", "person_female", "person_female_back", "person_male", "person_male_back"]
+
 # Create a list of colors for each class where each color is a tuple of 3 integer values
 rng = np.random.default_rng(3)
 colors = rng.uniform(0, 255, size=(len(class_names), 3))
+fm_colors = rng.uniform(0, 255, size=(len(fm_class_names), 3))
 
 def xywh2xyxy(x):
     # Convert bounding box (x, y, w, h) to bounding box (x1, y1, x2, y2)
@@ -80,7 +83,7 @@ def multiclass_nms(boxes, scores, class_ids, iou_threshold):
 
     return keep_boxes
 
-def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3):
+def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3, data="coco"):
     det_img = image.copy()
 
     img_height, img_width = image.shape[:2]
@@ -91,11 +94,19 @@ def draw_detections(image, boxes, scores, class_ids, mask_alpha=0.3):
 
     # Draw bounding boxes and labels of detections
     for class_id, box, score in zip(class_ids, boxes, scores):
-        color = colors[class_id]
+        if data == "coco":
+            class_name = class_names
+            color = colors[class_id]
+        elif data == "fm":
+            class_name = fm_class_names
+            color = fm_colors[class_id]
+        else:
+            return ValueError(
+                "Dataset not implemented for drawing; only face mask (fm) and COCO (coco) are implemented")
 
         draw_box(det_img, box, color)
 
-        label = class_names[class_id]
+        label = class_name[class_id]
         caption = f'{label} {int(score * 100)}%'
         draw_text(det_img, caption, box, color, font_size, text_thickness)
 
@@ -125,6 +136,7 @@ def draw_masks(image: np.ndarray, boxes: np.ndarray, classes: np.ndarray, mask_a
 
     # Draw bounding boxes and labels of detections
     for box, class_id in zip(boxes, classes):
+
         color = colors[class_id]
 
         x1, y1, x2, y2 = box.astype(int)
