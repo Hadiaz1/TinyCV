@@ -1,2 +1,3 @@
 yolov8n.onnx
 yolov8n_facemask.onnx
+yolov8n_facemask.pt
