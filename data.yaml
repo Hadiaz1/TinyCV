@@ -1,0 +1,19 @@
+names:
+- face_mask
+- human_face
+- incorrect_face_mask
+- person_female
+- person_female_back
+- person_male
+- person_male_back
+nc: 7
+roboflow:
+  license: CC BY 4.0
+  project: pedestrian-detection-cctv
+  url: https://universe.roboflow.com/tinycv/pedestrian-detection-cctv/dataset/1
+  version: 1
+  workspace: tinycv
+test: ../test/images
+train: Pedestrian-Detection-CCTV-1/train/images
+val: Pedestrian-Detection-CCTV-1/valid/images
+
