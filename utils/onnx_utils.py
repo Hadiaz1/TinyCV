@@ -3,7 +3,8 @@ import cv2
 import numpy as np
 import os
 
-from onnxruntime.quantization import quantize, quantize_static, QuantFormat, QuantType, CalibrationDataReader
+from onnxruntime.quantization import quantize, quantize_static, QuantFormat, QuantType, CalibrationDataReader, CalibrationMethod
+
 
 class CalibReader(CalibrationDataReader):
     def __init__(self, calibration_images_dir: str, model_path: str):
@@ -71,7 +72,7 @@ def static_quantize_onnx(unquantized_model_path,
                          per_channel=True,
                          weight_type=QuantType.QInt8,
                          activation_type=QuantType.QInt8,
-                         reduce_range=False):
+                         reduce_range=True):
 
     # onnxruntime.quantization.quant_pre_process(unquantized_model_path, quantized_model_path)
     quantize_static(
@@ -82,7 +83,8 @@ def static_quantize_onnx(unquantized_model_path,
         per_channel=per_channel,
         weight_type=weight_type,
         activation_type=activation_type,
-        reduce_range=reduce_range)
+        reduce_range=reduce_range,
+        calibrate_method=CalibrationMethod.MinMax)
 
 if __name__ == "__main__":
     model_path = "models/yolov8n_facemask.onnx"
