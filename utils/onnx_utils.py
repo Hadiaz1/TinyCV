@@ -7,45 +7,62 @@ from onnxruntime.quantization import quantize, quantize_static, QuantFormat, Qua
 
 class CalibReader(CalibrationDataReader):
     def __init__(self, calibration_images_dir: str, model_path: str):
-        self.data_paths = calibration_images_dir
-        self.image_files = [os.path.join(calibration_images_dir, f) for f in os.listdir(calibration_images_dir) if
-                            f.endswith(('.jpg', '.png', '.jpeg'))]
-        session = onnxruntime.InferenceSession(model_path, providers=onnxruntime.get_available_providers())
-        (_, _, self.height, self.width) = session.get_inputs()[0].shape
+        self.enum_data = None
+
+        session = onnxruntime.InferenceSession(model_path, None)
+        (_, _, height, width) = session.get_inputs()[0].shape
+
+        # Convert images to input data
+        self.nhwc_data_list = _preprocess_images(calibration_images_dir, height, width, size_limit=0)
+
+        self.input_name = session.get_inputs()[0].name
+        self.datasize = len(self.nhwc_data_list)
 
     def get_next(self):
-        try:
-            # Load the image and preprocess it
-            img_path = self.image_files.pop(0)
-            img_data = preprocess_image(img_path, self.height, self.width)
+        if self.enum_data is None:
+            self.enum_data = iter(
+                [{self.input_name: nhwc_data} for nhwc_data in self.nhwc_data_list]
+            )
+        return next(self.enum_data, None)
 
-            # Return the input data as a dictionary with the input name
-            return img_data
-        except IndexError:
-            # If no more data is available, return None
-            return None
+    def rewind(self):
+        self.enum_data = None
 
 
-def preprocess_image(img_path, height, width):
-    # Read the image using OpenCV
-    image = cv2.imread(img_path)
+def _preprocess_images(imgs_path, height, width, size_limit=0):
+    image_names = os.listdir(imgs_path)
+    if size_limit > 0 and len(image_names) >= size_limit:
+        batch_filenames = [image_names[i] for i in range(size_limit)]
+    else:
+        batch_filenames = image_names
 
-    # Convert BGR to RGB
-    input_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    unconcatenated_batch_data = []
 
-    # Resize the image to the model's input size
-    input_img = cv2.resize(input_img, (width, height))
+    for image_name in batch_filenames:
+        image_filepath = imgs_path + "/" + image_name
+        # Read the image using OpenCV
+        image = cv2.imread(image_filepath)
 
-    # Normalize pixel values to be in the range [0, 1]
-    input_img = input_img / 255.0
+        # Convert BGR to RGB
+        input_img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # Transpose the channels to match the ONNX model input format (HWC to CHW)
-    input_img = input_img.transpose(2, 0, 1)
+        # Resize the image to the model's input size
+        input_img = cv2.resize(input_img, (width, height))
 
-    # Add an extra dimension to represent the batch size (1 in this case)
-    input_tensor = input_img[np.newaxis, :, :, :].astype(np.float32)
+        # Normalize pixel values to be in the range [0, 1]
+        input_img = input_img / 255.0
 
-    return input_tensor
+        # Transpose the channels to match the ONNX model input format (HWC to CHW)
+        input_img = input_img.transpose(2, 0, 1)
+
+        # Add an extra dimension to represent the batch size (1 in this case)
+        input_tensor = input_img[np.newaxis, :, :, :].astype(np.float32)
+
+        unconcatenated_batch_data.append(input_tensor)
+
+    batch_data = np.concatenate(
+        np.expand_dims(unconcatenated_batch_data, axis=0), axis=0)
+    return batch_data
 
 def static_quantize_onnx(unquantized_model_path,
                          quantized_model_path,
@@ -56,7 +73,7 @@ def static_quantize_onnx(unquantized_model_path,
                          activation_type=QuantType.QInt8,
                          reduce_range=False):
 
-    onnxruntime.quantization.quant_pre_process(unquantized_model_path, quantized_model_path)
+    # onnxruntime.quantization.quant_pre_process(unquantized_model_path, quantized_model_path)
     quantize_static(
         unquantized_model_path,
         quantized_model_path,
@@ -83,7 +100,8 @@ if __name__ == "__main__":
     if not os.path.exists(unquantized_model_path):
         raise FileNotFoundError(f"The unquantized model {unquantized_model_path} does not exist. Please provide the path to an unquantized model.")
 
-    # # Quantize the model
-    # static_quantize_onnx(unquantized_model_path, quantized_model_path, calibration_data)
-    #
-    # print(f"Quantization completed. Quantized model saved to: {quantized_model_path}")
+    onnxruntime.quantization.quant_pre_process(unquantized_model_path, quantized_model_path)
+    # Quantize the model
+    static_quantize_onnx(unquantized_model_path, quantized_model_path, calibration_data)
+
+    print(f"Quantization completed. Quantized model saved to: {quantized_model_path}")

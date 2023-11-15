@@ -10,4 +10,4 @@ def eval_model(model_path, data_yaml_path, imgsz):
     return metrics
 
 if __name__ == "__main__":
-    eval_model("models/yolov8n_facemask.onnx", "data.yaml", 224)
+    eval_model("models/yolov8n_facemask_quantized.onnx", "data.yaml", 224)
