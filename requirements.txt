@@ -5,3 +5,4 @@ pillow
 supervision
 imread_from_url
 onnx
+sparseml[ultralytics]
